@@ -1,10 +1,4 @@
-﻿/*
-    Todo:
-        3. outout to event hub
-        4. output to signalr
-        5. require --partitionIf of time/offset/sequence
-*/
-using System;
+﻿using System;
 using System.Globalization;
 using System.IO;
 using System.Threading;
