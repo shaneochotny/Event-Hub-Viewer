@@ -48,6 +48,9 @@ namespace EventHubViewer
         [Option ("quiet", Default = false, HelpText = "Don't output messages to the console.")]
         public bool quiet { get; set; }
 
+        [Option ("step", Default = false, HelpText = "Step through messages using the enter key.")]
+        public bool step { get; set; }
+
         [Usage(ApplicationAlias = "ehviewer")]
         public static IEnumerable<Example> Examples
         {

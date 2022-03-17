@@ -86,7 +86,7 @@ namespace EventHubViewer
                         cancellationSource.Cancel();
                     }
 
-                    await outputMessage(namespaceName, consumer.EventHubName, partitionEvent, clOptions.outputPath, clOptions.quiet);
+                    await outputMessage(namespaceName, consumer.EventHubName, partitionEvent, clOptions.outputPath, clOptions.quiet, clOptions.step);
                 }
             }
             catch (TaskCanceledException)
@@ -163,7 +163,7 @@ namespace EventHubViewer
                         cancellationSource.Cancel();
                     }
     
-                    await outputMessage(namespaceName, consumer.EventHubName, partitionEvent, clOptions.outputPath, clOptions.quiet);
+                    await outputMessage(namespaceName, consumer.EventHubName, partitionEvent, clOptions.outputPath, clOptions.quiet, clOptions.step);
                 }
             }
             catch (TaskCanceledException)
@@ -182,7 +182,7 @@ namespace EventHubViewer
             return 0;
         }
 
-        private static async Task outputMessage(string namespaceName, string eventHubName, PartitionEvent partitionEvent, string outputPath, bool quiet)
+        private static async Task outputMessage(string namespaceName, string eventHubName, PartitionEvent partitionEvent, string outputPath, bool quiet, bool step)
         {
             if (!quiet) {
                 Console.WriteLine($"Enqueued: { partitionEvent.Data.EnqueuedTime.ToString() }");
@@ -193,9 +193,12 @@ namespace EventHubViewer
                 Console.WriteLine("Body:");
                 Console.WriteLine(partitionEvent.Data.EventBody.ToString());
                 Console.WriteLine("");
+                if (step) {
+                    while (Console.ReadKey().Key != ConsoleKey.Enter) {}
+                }
             } 
             
-            if (outputPath != "") {
+            if (outputPath != null) {
                 await File.WriteAllTextAsync($"{outputPath}/{namespaceName}-{eventHubName}-partition-{partitionEvent.Partition.PartitionId}-seq-{partitionEvent.Data.SequenceNumber}-offset-{partitionEvent.Data.Offset}", partitionEvent.Data.EventBody.ToString());
             }
         }
