@@ -2,6 +2,13 @@
 
 This is a quick console application that acts as an Event Hub consumer client for use in various testing and debugging scenarios. It allows you to specify partition id's and start/end parameters so you can selectively consume messages of interest, or just consume all messages.
 
+# Feature Overview
+
+- Specify Read Location: Specify the offset, sequence number, time, and/or partitions to fetch exactly the messages you want.
+- Step Through Messages: Use the keyboard to step through and read messages one at a time.
+- Metadata: View system and custom application message data from the header.
+- Output: View messages in the console or output to files.
+
 # How to Run
 
 ```
@@ -52,6 +59,18 @@ dotnet run [parameters]
                       directory path.
 
 --quiet               (Default: false) Don't output messages to the console.
+
+--properties          (Default: false) Display property metadata such as
+                      offset, sequence, and enqueued time.
+
+--appProperties       (Default: false) Display any free-form properties and
+                      metadata added to the event header.
+
+--systemProperties    (Default: false) Display any system properties and
+                      metadata added to the event header.
+
+--step                (Default: false) Step through messages using the enter
+                      key.
 
 --help                Display this help screen.
 

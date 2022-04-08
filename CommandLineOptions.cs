@@ -48,6 +48,15 @@ namespace EventHubViewer
         [Option ("quiet", Default = false, HelpText = "Don't output messages to the console.")]
         public bool quiet { get; set; }
 
+        [Option ("properties", Default = false, HelpText = "Display property metadata such as offset, sequence, and enqueued time.")]
+        public bool properties { get; set; }
+
+        [Option ("appProperties", Default = false, HelpText = "Display any free-form properties and metadata added to the event header.")]
+        public bool appProperties { get; set; }
+
+        [Option ("systemProperties", Default = false, HelpText = "Display any system properties and metadata added to the event header.")]
+        public bool systemProperties { get; set; }
+
         [Option ("step", Default = false, HelpText = "Step through messages using the enter key.")]
         public bool step { get; set; }
 
