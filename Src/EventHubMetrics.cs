@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using Azure.Messaging.EventHubs;
@@ -100,6 +101,8 @@ namespace EventHubViewer
             }
 
             // Render the totals
+            DateTime date = DateTime.UtcNow;
+            metricsTable.UpdateCell(eventHubProperties.PartitionIds.Length, 3, $"[bold green]{date.ToString("hh:mm:ss.ffff")}[/]");
             metricsTable.UpdateCell(eventHubProperties.PartitionIds.Length, 4, $"[bold green]{totalMessagesPerSecond}[/]");
             var totalThroughput = Math.Round(totalKbPerSecond / 1024.00, 2);
             metricsTable.UpdateCell(eventHubProperties.PartitionIds.Length, 5, $"[bold green]{Math.Round(totalKbPerSecond / 1024.00, 2)} KB/sec[/]");
