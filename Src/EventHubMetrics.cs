@@ -79,6 +79,7 @@ namespace EventHubViewer
         {
             long totalMessagesPerSecond = 0;
             long totalKbPerSecond = 0;
+            DateTime date = DateTime.UtcNow;
 
             foreach (var partitionId in eventHubProperties.PartitionIds)
             {
@@ -101,7 +102,6 @@ namespace EventHubViewer
             }
 
             // Render the totals
-            DateTime date = DateTime.UtcNow;
             metricsTable.UpdateCell(eventHubProperties.PartitionIds.Length, 3, $"[bold green]{date.ToString("hh:mm:ss.ffff")}[/]");
             metricsTable.UpdateCell(eventHubProperties.PartitionIds.Length, 4, $"[bold green]{totalMessagesPerSecond}[/]");
             var totalThroughput = Math.Round(totalKbPerSecond / 1024.00, 2);
