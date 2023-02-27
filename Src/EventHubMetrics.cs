@@ -10,6 +10,7 @@ namespace EventHubViewer
 {
     class EventHubMetrics
     {
+        // Maintain partition statistics to calculate differences
         public class PartitionStatistics {
             public long LastSequenceNumber { get; set; }
             public long LastOffset { get; set; }
@@ -18,7 +19,7 @@ namespace EventHubViewer
 
         public static List<PartitionStatistics> Statistics = new List<PartitionStatistics>();
 
-        // Display details from the Event Hub and Partitions and then exit
+        // Build the Live Metrics table and refresh every second
         public static async Task getLiveMetrics(CommandLineOptions clOptions)
         {
             using CancellationTokenSource cancellationSource = new CancellationTokenSource();
@@ -32,69 +33,60 @@ namespace EventHubViewer
                 $"Total Partitions: { eventHubProperties.PartitionIds.Length }\n"
             );
 
-            var table = new Table();
-            table.AddColumn("Partition");
-            table.AddColumn("Last Sequence Number");
-            table.AddColumn("Last Offset");
-            table.AddColumn("Last Enqueued Time");
-            table.AddColumn("Messages per Second");
-            table.AddColumn("Bytes per Second");
+            var metricsTable = new Table();
+            metricsTable.AddColumn("Partition");
+            metricsTable.AddColumn("Last Sequence Number");
+            metricsTable.AddColumn("Last Offset");
+            metricsTable.AddColumn("Last Enqueued Time");
+            metricsTable.AddColumn("Messages per Second");
+            metricsTable.AddColumn("Throughput");
 
             foreach (var partitionId in eventHubProperties.PartitionIds)
             {
-
+                // Get the initial partition-level statistics
                 PartitionProperties partitionProperties = await consumer.GetPartitionPropertiesAsync(partitionId, cancellationToken: cancellationSource.Token);
                 PartitionStatistics partitionStatistics = new PartitionStatistics();
                 partitionStatistics.LastSequenceNumber = partitionProperties.LastEnqueuedSequenceNumber;
                 partitionStatistics.LastOffset = partitionProperties.LastEnqueuedOffset;
                 Statistics.Add(partitionStatistics);
 
-                table.AddRow(partitionId);
+                // Add a table row for each partition
+                metricsTable.AddRow(partitionId);
             }
 
-            AnsiConsole.Live(table)
+            AnsiConsole.Live(metricsTable)
                 .Start(ctx => 
                 {
                     do
                     {
                         while (!Console.KeyAvailable)
                         {
-                            renderTable(consumer, eventHubProperties, cancellationSource, table);
+                            renderTable(consumer, eventHubProperties, cancellationSource, metricsTable);
                             ctx.Refresh();
                             Thread.Sleep(1000);
                         }
                     } while (Console.ReadKey(true).Key != ConsoleKey.Escape);
                 });
-
-            foreach (var partitionId in eventHubProperties.PartitionIds)
-            {
-                PartitionProperties partitionProperties = await consumer.GetPartitionPropertiesAsync(partitionId, cancellationToken: cancellationSource.Token);
-                Console.WriteLine(
-                    $"Partition: { partitionId }\n" +
-                    $"\tHas Messages: { (partitionProperties.IsEmpty ? "No" : "Yes") }\n" +
-                    $"\tFirst Sequence Number: { partitionProperties.BeginningSequenceNumber }\n" +
-                    $"\tLast Sequence Number: { partitionProperties.LastEnqueuedSequenceNumber }\n" +
-                    $"\tLast Offset Number: { partitionProperties.LastEnqueuedOffset }\n" +
-                    $"\tLast Enqueued Time: { partitionProperties.LastEnqueuedTime }\n"
-                );
-            }
         }
 
-        private static async void renderTable(EventHubConsumerClient consumer, EventHubProperties eventHubProperties, CancellationTokenSource cancellationSource, Table table)
+        // Pull the partition level properties and render the updates
+        private static async void renderTable(EventHubConsumerClient consumer, EventHubProperties eventHubProperties, CancellationTokenSource cancellationSource, Table metricsTable)
         {
             foreach (var partitionId in eventHubProperties.PartitionIds)
             {
                 PartitionProperties partitionProperties = await consumer.GetPartitionPropertiesAsync(partitionId, cancellationToken: cancellationSource.Token);
-                table.UpdateCell(Int32.Parse(partitionId), 1, partitionProperties.LastEnqueuedSequenceNumber.ToString());
-                table.UpdateCell(Int32.Parse(partitionId), 2, partitionProperties.LastEnqueuedOffset.ToString());
-                table.UpdateCell(Int32.Parse(partitionId), 3, partitionProperties.LastEnqueuedTime.ToString("hh:mm.ss:ffff"));
+                metricsTable.UpdateCell(Int32.Parse(partitionId), 1, partitionProperties.LastEnqueuedSequenceNumber.ToString());
+                metricsTable.UpdateCell(Int32.Parse(partitionId), 2, partitionProperties.LastEnqueuedOffset.ToString());
+                metricsTable.UpdateCell(Int32.Parse(partitionId), 3, partitionProperties.LastEnqueuedTime.ToString("hh:mm.ss:ffff"));
 
+                // Calculate messages per second. Need to update to calculate based on LastEnqueuedTime
                 var messagesPerSecond = partitionProperties.LastEnqueuedSequenceNumber - Statistics[Int32.Parse(partitionId)].LastSequenceNumber;
-                table.UpdateCell(Int32.Parse(partitionId), 4, $"[green]{messagesPerSecond}[/]");
+                metricsTable.UpdateCell(Int32.Parse(partitionId), 4, $"[green]{messagesPerSecond}[/]");
                 Statistics[Int32.Parse(partitionId)].LastSequenceNumber = partitionProperties.LastEnqueuedSequenceNumber;
 
-                var bytesPerSecond = (partitionProperties.LastEnqueuedOffset - Statistics[Int32.Parse(partitionId)].LastOffset) / 1024.00;
-                table.UpdateCell(Int32.Parse(partitionId), 5, $"[green]{bytesPerSecond}[/]");
+                // Calculate the throughput
+                var kbPerSecond = Math.Round((partitionProperties.LastEnqueuedOffset - Statistics[Int32.Parse(partitionId)].LastOffset) / 1024.00, 2);
+                metricsTable.UpdateCell(Int32.Parse(partitionId), 5, $"[green]{kbPerSecond} KB/sec[/]");
                 Statistics[Int32.Parse(partitionId)].LastOffset = partitionProperties.LastEnqueuedOffset;
             }
         }
