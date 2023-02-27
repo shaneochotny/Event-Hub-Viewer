@@ -34,12 +34,13 @@ namespace EventHubViewer
             );
 
             var metricsTable = new Table();
-            metricsTable.AddColumn("Partition");
-            metricsTable.AddColumn("Last Sequence Number");
-            metricsTable.AddColumn("Last Offset");
-            metricsTable.AddColumn("Last Enqueued Time");
-            metricsTable.AddColumn("Messages per Second");
-            metricsTable.AddColumn("Throughput");
+            metricsTable.Border = TableBorder.SimpleHeavy;
+            metricsTable.AddColumn("[bold]Partition[/]");
+            metricsTable.AddColumn("[bold]Last Sequence Number[/]");
+            metricsTable.AddColumn("[bold]Last Offset[/]");
+            metricsTable.AddColumn("[bold]Last Enqueued Time[/]");
+            metricsTable.AddColumn("[bold]Messages per Second[/]");
+            metricsTable.AddColumn("[bold]Throughput[/]");
 
             foreach (var partitionId in eventHubProperties.PartitionIds)
             {
@@ -77,7 +78,7 @@ namespace EventHubViewer
                 PartitionProperties partitionProperties = await consumer.GetPartitionPropertiesAsync(partitionId, cancellationToken: cancellationSource.Token);
                 metricsTable.UpdateCell(Int32.Parse(partitionId), 1, partitionProperties.LastEnqueuedSequenceNumber.ToString());
                 metricsTable.UpdateCell(Int32.Parse(partitionId), 2, partitionProperties.LastEnqueuedOffset.ToString());
-                metricsTable.UpdateCell(Int32.Parse(partitionId), 3, partitionProperties.LastEnqueuedTime.ToString("hh:mm.ss:ffff"));
+                metricsTable.UpdateCell(Int32.Parse(partitionId), 3, partitionProperties.LastEnqueuedTime.ToString("hh:mm:ss.ffff"));
 
                 // Calculate messages per second. Need to update to calculate based on LastEnqueuedTime
                 var messagesPerSecond = partitionProperties.LastEnqueuedSequenceNumber - Statistics[Int32.Parse(partitionId)].LastSequenceNumber;
