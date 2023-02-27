@@ -15,6 +15,9 @@ namespace EventHubViewer
         [Option("consumerGroup", Required = true, HelpText = "Consumer Group to use.")]
         public string consumerGroup { get; set; }
 
+        [Option ("getLiveMetrics", Default = false, HelpText = "Display live metrics from the Event Hubs such as messages per second.")]
+        public bool getLiveMetrics { get; set; }
+
         [Option ("getDetails", Default = false, HelpText = "Display information about the specified Event Hub and exit.")]
         public bool getDetails { get; set; }
 
