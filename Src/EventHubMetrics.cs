@@ -54,6 +54,9 @@ namespace EventHubViewer
                 // Add a table row for each partition
                 metricsTable.AddRow(partitionId);
             }
+            
+            
+            metricsTable.AddRow("");
 
             AnsiConsole.Live(metricsTable)
                 .Start(ctx => 
@@ -73,6 +76,9 @@ namespace EventHubViewer
         // Pull the partition level properties and render the updates
         private static async void renderTable(EventHubConsumerClient consumer, EventHubProperties eventHubProperties, CancellationTokenSource cancellationSource, Table metricsTable)
         {
+            long totalMessagesPerSecond = 0;
+            long totalKbPerSecond = 0;
+
             foreach (var partitionId in eventHubProperties.PartitionIds)
             {
                 PartitionProperties partitionProperties = await consumer.GetPartitionPropertiesAsync(partitionId, cancellationToken: cancellationSource.Token);
@@ -84,12 +90,19 @@ namespace EventHubViewer
                 var messagesPerSecond = partitionProperties.LastEnqueuedSequenceNumber - Statistics[Int32.Parse(partitionId)].LastSequenceNumber;
                 metricsTable.UpdateCell(Int32.Parse(partitionId), 4, $"[green]{messagesPerSecond}[/]");
                 Statistics[Int32.Parse(partitionId)].LastSequenceNumber = partitionProperties.LastEnqueuedSequenceNumber;
+                totalMessagesPerSecond += messagesPerSecond;
 
                 // Calculate the throughput
                 var kbPerSecond = Math.Round((partitionProperties.LastEnqueuedOffset - Statistics[Int32.Parse(partitionId)].LastOffset) / 1024.00, 2);
                 metricsTable.UpdateCell(Int32.Parse(partitionId), 5, $"[green]{kbPerSecond} KB/sec[/]");
+                totalKbPerSecond += (partitionProperties.LastEnqueuedOffset - Statistics[Int32.Parse(partitionId)].LastOffset);
                 Statistics[Int32.Parse(partitionId)].LastOffset = partitionProperties.LastEnqueuedOffset;
             }
+
+            // Render the totals
+            metricsTable.UpdateCell(eventHubProperties.PartitionIds.Length, 4, $"[bold green]{totalMessagesPerSecond}[/]");
+            var totalThroughput = Math.Round(totalKbPerSecond / 1024.00, 2);
+            metricsTable.UpdateCell(eventHubProperties.PartitionIds.Length, 5, $"[bold green]{Math.Round(totalKbPerSecond / 1024.00, 2)} KB/sec[/]");
         }
     }
 }
